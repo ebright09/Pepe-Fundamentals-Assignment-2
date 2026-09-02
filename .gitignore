@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+dist/
+build/
+.vercel/
+.vite/
+
+# environment — NEVER commit real secrets
+.env
+.env.*
+!.env.example
+
+# test artifacts
+coverage/
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp

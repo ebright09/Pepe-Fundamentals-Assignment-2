@@ -1,0 +1,25 @@
+{
+  "name": "networking-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Secure Networking Tracker \u2014 a private, per-user contact tracker for Berkeley networking, built on Neon Postgres with Row Level Security.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=backend & npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "test": "npm test --workspace=backend",
+    "test:rls": "npm run test:rls --workspace=backend",
+    "screenshots": "node scripts/screenshots.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  }
+}

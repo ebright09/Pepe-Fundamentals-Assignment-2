@@ -1,0 +1,28 @@
+{
+  "name": "networking-tracker-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "React SPA for the Secure Networking Tracker.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@neondatabase/neon-js": "^0.7.0-beta",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-select": "^2.1.6",
+    "canvas-confetti": "^1.9.3",
+    "fireworks-js": "^2.10.8",
+    "framer-motion": "^12.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "vite": "^6.0.7"
+  }
+}

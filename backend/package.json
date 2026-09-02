@@ -1,0 +1,32 @@
+{
+  "name": "networking-tracker-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Node.js/Express API for the Secure Networking Tracker. Verifies Neon Auth JWTs, validates input, and proxies to the Neon Data API as the signed-in user so Postgres RLS is always enforced.",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:rls": "vitest run --config vitest.rls.config.js",
+    "db:migrate": "node scripts/migrate.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jose": "^5.9.6",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "pg": "^8.13.1",
+    "supertest": "^7.0.0",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,301 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   Design tokens
+   A single neon palette drives every surface, border and glow, so the whole
+   app reads as one system even while the background is melting.
+   ========================================================================== */
+@theme {
+  --color-void: #0a0118;
+  --color-void-2: #140233;
+  --color-acid: #39ff14;
+  --color-magenta: #ff2bd6;
+  --color-cyan: #22e4ff;
+  --color-amber: #ffb703;
+  --color-violet: #a855f7;
+
+  --font-display: 'Space Grotesk', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+}
+
+:root {
+  /* Driven by the trip-intensity slider: 0 = calm, 1 = default, 2 = maximum. */
+  --trip: 1;
+  --trip-blur: calc(var(--trip) * 40px);
+  --trip-sat: calc(100% + var(--trip) * 70%);
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-void);
+  color: #f4ecff;
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   Psychedelic effects
+   Every animation below is disabled by `.calm` on <html>, which the Trip
+   controls set and which is turned on automatically for visitors who ask for
+   reduced motion.
+   ========================================================================== */
+
+@keyframes hue-cycle {
+  from { filter: hue-rotate(0deg) saturate(var(--trip-sat)); }
+  to   { filter: hue-rotate(360deg) saturate(var(--trip-sat)); }
+}
+
+@keyframes float-blob {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  33%  { transform: translate3d(6vw, -4vh, 0) scale(1.25) rotate(120deg); }
+  66%  { transform: translate3d(-5vw, 5vh, 0) scale(0.85) rotate(240deg); }
+  100% { transform: translate3d(0, 0, 0) scale(1) rotate(360deg); }
+}
+
+@keyframes shimmer-sweep {
+  from { background-position: 0% 50%; }
+  to   { background-position: 200% 50%; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 calc(12px * var(--trip)) rgba(255, 43, 214, 0.55),
+                          0 0 calc(36px * var(--trip)) rgba(34, 228, 255, 0.28); }
+  50%      { box-shadow: 0 0 calc(26px * var(--trip)) rgba(57, 255, 20, 0.6),
+                          0 0 calc(64px * var(--trip)) rgba(168, 85, 247, 0.4); }
+}
+
+@keyframes wobble-in {
+  0%   { transform: scale(0.85) rotate(-4deg); opacity: 0; }
+  60%  { transform: scale(1.04) rotate(1.5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes drift-grain {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2%, 1%); }
+  50%  { transform: translate(1%, -2%); }
+  75%  { transform: translate(2%, 2%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* --- Background layers ---------------------------------------------------- */
+
+.plasma-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  width: 100%;
+  height: 100%;
+  opacity: calc(0.42 + var(--trip) * 0.34);
+  transition: opacity 600ms ease;
+}
+
+.blob-field {
+  position: fixed;
+  inset: -20vmax;
+  z-index: -4;
+  pointer-events: none;
+  filter: blur(var(--trip-blur)) saturate(var(--trip-sat));
+}
+
+.blob {
+  position: absolute;
+  width: 42vmax;
+  height: 42vmax;
+  border-radius: 45% 55% 62% 38% / 52% 44% 56% 48%;
+  mix-blend-mode: screen;
+  opacity: calc(0.30 * var(--trip));
+  animation: float-blob linear infinite;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 92% 74% at 50% 42%, rgba(10, 1, 24, 0.34), rgba(10, 1, 24, 0.76) 100%);
+}
+
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: calc(0.05 * var(--trip));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: drift-grain 1.4s steps(4) infinite;
+}
+
+/* --- Surfaces ------------------------------------------------------------- */
+
+.glass {
+  background: linear-gradient(
+    145deg,
+    rgba(34, 10, 74, 0.94),
+    rgba(14, 3, 34, 0.92)
+  );
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(190, 130, 255, 0.42);
+  box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.75);
+  border-radius: 1.25rem;
+}
+
+/* An animated conic border, drawn with a masked pseudo-element so the panel
+   interior stays readable. */
+.neon-frame {
+  position: relative;
+  isolation: isolate;
+}
+.neon-frame::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--angle, 0deg),
+    var(--color-magenta),
+    var(--color-cyan),
+    var(--color-acid),
+    var(--color-amber),
+    var(--color-magenta)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: calc(0.5 + var(--trip) * 0.35);
+  animation: spin-angle 6s linear infinite;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes spin-angle {
+  to { --angle: 360deg; }
+}
+
+/* --- Typography ----------------------------------------------------------- */
+
+.holo-text {
+  background: linear-gradient(
+    100deg,
+    #ff7ae4,
+    #7df3ff,
+    #b6ff8f,
+    #ffd97a,
+    #ff7ae4
+  );
+  background-size: 200% auto;
+  filter: drop-shadow(0 0 14px rgba(255, 122, 228, 0.35));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-sweep calc(6s / max(var(--trip), 0.35)) linear infinite;
+}
+
+/* Chromatic aberration: two offset copies bleeding cyan and magenta. */
+.aberrate {
+  position: relative;
+  text-shadow:
+    calc(var(--trip) * 2px) 0 rgba(255, 43, 214, 0.55),
+    calc(var(--trip) * -2px) 0 rgba(34, 228, 255, 0.55);
+}
+
+/* --- Interactive ---------------------------------------------------------- */
+
+.glow-on-hover {
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 220ms ease;
+}
+.glow-on-hover:hover {
+  transform: translateY(-3px) scale(1.02);
+  animation: pulse-glow 1.6s ease-in-out infinite;
+}
+
+.wobble-in {
+  animation: wobble-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.trail-dot {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  border-radius: 9999px;
+  mix-blend-mode: screen;
+}
+
+/* Focus states must survive all of the above — keyboard users still need to
+   see where they are. */
+:where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* --- Calm mode ------------------------------------------------------------
+   One switch that stops every animation, flattens the background and restores
+   plain contrast. Applied automatically under prefers-reduced-motion.
+   -------------------------------------------------------------------------- */
+.calm .plasma-canvas,
+.calm .grain,
+.calm .blob-field,
+.calm .trail-dot {
+  display: none !important;
+}
+
+.calm *,
+.calm *::before,
+.calm *::after {
+  animation: none !important;
+  transition-duration: 120ms !important;
+}
+
+.calm body,
+.calm .glass {
+  background: #12071f !important;
+  backdrop-filter: none !important;
+}
+
+.calm .holo-text {
+  background: none;
+  -webkit-text-fill-color: #f4ecff;
+  color: #f4ecff;
+}
+
+.calm .aberrate {
+  text-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .plasma-canvas,
+  .grain,
+  .blob-field {
+    display: none;
+  }
+}
+
+/* Scrollbar, themed to match. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgba(10, 1, 24, 0.6); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--color-magenta), var(--color-cyan));
+  border-radius: 9999px;
+}
