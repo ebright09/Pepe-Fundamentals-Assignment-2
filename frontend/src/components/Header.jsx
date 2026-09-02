@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTrip } from '../fx/TripContext.jsx';
+import { useTrip, MAX_TRIP } from '../fx/TripContext.jsx';
 import { Button } from './ui.jsx';
 
-/** Intensity slider plus the calm-mode escape hatch. */
+/** Intensity slider, a one-click maximum, and the calm-mode escape hatch. */
 const TripControls = () => {
-  const { intensity, setIntensity, calm, toggleCalm } = useTrip();
+  const { intensity, setIntensity, calm, toggleCalm, maxTrip, melting } = useTrip();
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -20,15 +20,30 @@ const TripControls = () => {
           id="trip-intensity"
           type="range"
           min="0"
-          max="2"
+          max={MAX_TRIP}
           step="0.1"
           value={intensity}
           disabled={calm}
           onChange={(event) => setIntensity(Number(event.target.value))}
           className="h-1.5 w-24 cursor-pointer appearance-none rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-fuchsia-500 disabled:opacity-40 sm:w-32"
           aria-label="Visual effect intensity"
+          aria-valuetext={`${Math.round((intensity / MAX_TRIP) * 100)} percent${melting ? ', melting' : ''}`}
         />
       </div>
+
+      <button
+        type="button"
+        onClick={maxTrip}
+        disabled={calm}
+        className={`rounded-full border px-3 py-1 text-xs font-black tracking-wider uppercase transition disabled:opacity-40 ${
+          melting
+            ? 'border-transparent bg-gradient-to-r from-fuchsia-500 via-amber-400 to-cyan-400 text-black'
+            : 'border-fuchsia-400/50 text-fuchsia-200 hover:border-fuchsia-300'
+        }`}
+        title="Everything, all the way up"
+      >
+        {melting ? '🫠 Melting' : '🌈 Max trip'}
+      </button>
       <button
         type="button"
         onClick={toggleCalm}

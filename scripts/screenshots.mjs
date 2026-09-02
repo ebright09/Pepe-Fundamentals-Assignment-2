@@ -84,6 +84,27 @@ const run = async () => {
   await shot(page, '04-invalid');
   await page.getByRole('button', { name: 'Cancel' }).click();
 
+  // Maximum intensity — melt mode, for the effects section of the README.
+  const openMenu = async (target) => {
+    const more = target.getByRole('button', { name: 'More options' });
+    if (await more.isVisible().catch(() => false)) await more.click();
+  };
+  await openMenu(page);
+  // Target by title: the visible label switches between "Max trip" and
+  // "Melting", and the control is rendered twice (inline on desktop, inside
+  // the menu on mobile), so pick the one actually on screen.
+  await page
+    .locator('button[title="Everything, all the way up"]')
+    .locator('visible=true')
+    .first()
+    .click();
+  await page.waitForTimeout(2600);
+  await shot(page, '10-max-trip');
+
+  // Back to the default so the remaining shots are representative.
+  await page.locator('#trip-intensity').fill('1.5');
+  await page.waitForTimeout(900);
+
   // Sort and filter.
   await page.selectOption('#sort-by', 'priority');
   await page.getByRole('button', { name: 'High' }).click();

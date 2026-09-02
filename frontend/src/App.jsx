@@ -10,7 +10,7 @@ import { ContactForm } from './components/ContactForm.jsx';
 import { ConfirmDelete } from './components/ConfirmDelete.jsx';
 import { LoadingList, EmptyState, ErrorState } from './components/States.jsx';
 import { useToast } from './components/Toasts.jsx';
-import { PlasmaBackground, BlobField, Scrim, Grain } from './fx/PlasmaBackground.jsx';
+import { PlasmaBackground, BlobField, Scrim, Grain, Scanlines } from './fx/PlasmaBackground.jsx';
 import { CursorTrail } from './fx/CursorTrail.jsx';
 import { useFireworks } from './fx/Fireworks.jsx';
 import { useTrip } from './fx/TripContext.jsx';
@@ -164,6 +164,7 @@ export const App = () => {
       <BlobField />
       <Scrim />
       <Grain />
+      <Scanlines />
       <CursorTrail />
     </>
   );
@@ -183,7 +184,9 @@ export const App = () => {
     return (
       <>
         {backdrop}
-        <AuthGate onAuthenticated={refresh} />
+        <div className="trip-stage">
+          <AuthGate onAuthenticated={refresh} />
+        </div>
       </>
     );
   }
@@ -193,7 +196,7 @@ export const App = () => {
   return (
     <>
       {backdrop}
-      <div className="mx-auto min-h-dvh w-full max-w-6xl px-3 py-5 sm:px-5 sm:py-8">
+      <div className="trip-stage mx-auto min-h-dvh w-full max-w-6xl px-3 py-5 sm:px-5 sm:py-8">
         <Header
           user={user}
           onAdd={openCreate}

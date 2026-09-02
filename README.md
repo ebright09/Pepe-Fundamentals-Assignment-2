@@ -34,6 +34,12 @@ All screenshots are captured from the running app by `npm run screenshots`
 
 ![Contact list](docs/screenshots/02-contacts.png)
 
+**Max trip / melt mode** — the intensity slider at 3. Kaleidoscope folding, rainbow scanlines,
+prism-split text, continuous fireworks behind the glass. The table is still perfectly legible and
+the priority colours still mean what they mean — that is the whole trick.
+
+![Max trip](docs/screenshots/10-max-trip.png)
+
 **Sign in** — the gate. Nothing else renders until you are authenticated.
 
 ![Sign in](docs/screenshots/01-sign-in.png)
@@ -72,11 +78,24 @@ All screenshots are captured from the running app by `npm run screenshots`
 - Responsive from a 375px phone to a wide desktop
 
 **Visual effects**
-- A live WebGL plasma field — domain-warped noise through a rotating neon palette
-- Drifting blurred colour blobs, an animated film-grain layer and a conic animated border on every panel
-- **Confetti** on every save, a **bigger shower plus fireworks** when you add a high-priority contact, and fireworks on sign-in
-- Holographic shimmering text with chromatic aberration, spring-physics motion, and a hue-cycling cursor comet trail
-- A **Trip intensity slider** (0 → 2) and a **Calm mode** switch that stops every animation; calm mode turns itself on automatically for anyone whose system asks for reduced motion
+
+A single full-screen fragment shader does most of the work. Fractal Brownian noise is
+domain-warped twice, folded through a **kaleidoscope**, pushed down a rotating **tunnel**, and then
+sampled three times at different offsets so red, green and blue separate the way they would through
+a **prism**. On top of that:
+
+- Drifting blurred colour blobs, animated film grain, and a conic animated border on every panel
+- Holographic shimmering text with chromatic aberration, spring-physics motion, a hue-cycling cursor comet trail
+- **Confetti** on every save — volume scales with the slider — plus a **bigger shower and fireworks** for a high-priority contact, and fireworks on sign-in
+- **Trip intensity slider, 0 → 3.** Past 1.6 the app enters **melt mode**: rainbow VHS scanlines appear, the interface breathes and warps, borders spin faster, and the fireworks stop being an event and become the weather
+- A **Max trip** button that slams everything to 3 at once
+- **Calm mode** stops every animation dead, and turns itself on automatically for anyone whose system asks for reduced motion
+
+Two deliberate constraints keep it usable at full tilt. The fireworks and scanlines render *behind*
+the interface (`z-index` 5 and 6, with the UI at 10) rather than over it — painted on top they
+simply erased the text. And melt mode's hue rotation **oscillates ±22°** instead of cycling a full
+360°: a full rotation made every colour meaningless, so the priority badges all became the same
+hue and the wordmark stopped being the wordmark.
 
 ---
 

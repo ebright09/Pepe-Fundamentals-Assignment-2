@@ -93,7 +93,7 @@ body {
   z-index: -5;
   width: 100%;
   height: 100%;
-  opacity: calc(0.42 + var(--trip) * 0.34);
+  opacity: calc(0.50 + var(--trip) * 0.22);
   transition: opacity 600ms ease;
 }
 
@@ -105,13 +105,18 @@ body {
   filter: blur(var(--trip-blur)) saturate(var(--trip-sat));
 }
 
+/* The backdrop carries no meaning, so it can cycle hue all the way round. */
+.melting .blob-field {
+  animation: hue-cycle 11s linear infinite;
+}
+
 .blob {
   position: absolute;
   width: 42vmax;
   height: 42vmax;
   border-radius: 45% 55% 62% 38% / 52% 44% 56% 48%;
   mix-blend-mode: screen;
-  opacity: calc(0.30 * var(--trip));
+  opacity: calc(0.26 * var(--trip));
   animation: float-blob linear infinite;
 }
 
@@ -121,7 +126,7 @@ body {
   z-index: -3;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 92% 74% at 50% 42%, rgba(10, 1, 24, 0.34), rgba(10, 1, 24, 0.76) 100%);
+    radial-gradient(ellipse 94% 76% at 50% 42%, rgba(10, 1, 24, 0.22), rgba(10, 1, 24, 0.68) 100%);
 }
 
 .grain {
@@ -129,7 +134,7 @@ body {
   inset: -50%;
   z-index: -1;
   pointer-events: none;
-  opacity: calc(0.05 * var(--trip));
+  opacity: calc(0.055 * var(--trip));
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   animation: drift-grain 1.4s steps(4) infinite;
 }
@@ -209,8 +214,10 @@ body {
 .aberrate {
   position: relative;
   text-shadow:
-    calc(var(--trip) * 2px) 0 rgba(255, 43, 214, 0.55),
-    calc(var(--trip) * -2px) 0 rgba(34, 228, 255, 0.55);
+    calc(var(--trip) * 2.4px) 0 rgba(255, 43, 214, 0.6),
+    calc(var(--trip) * -2.4px) 0 rgba(34, 228, 255, 0.6),
+    calc(var(--trip) * 4px) 0 rgba(255, 183, 3, 0.28),
+    calc(var(--trip) * -4px) 0 rgba(57, 255, 20, 0.28);
 }
 
 /* --- Interactive ---------------------------------------------------------- */
@@ -235,6 +242,77 @@ body {
   mix-blend-mode: screen;
 }
 
+/* The interface sits above the fireworks layer (z-5) but below dialogs and
+   toasts (z-50), so bursts read as depth behind the panels rather than paint
+   sprayed over the text. */
+.trip-stage {
+  position: relative;
+  z-index: 10;
+}
+
+/* Rainbow scanlines drifting down the screen, VHS-style. Rendered only past
+   the halfway mark on the slider. */
+@keyframes scan-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 0 100vh; }
+}
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: calc(0.05 + var(--trip) * 0.07);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 43, 214, 0.5) 0px,
+    rgba(34, 228, 255, 0.5) 2px,
+    rgba(57, 255, 20, 0.5) 4px,
+    transparent 5px,
+    transparent 9px
+  );
+  animation: scan-drift 2.4s linear infinite;
+}
+
+/* ---- Melt mode: everything above --trip 1.6 ----------------------------- */
+
+@keyframes melt-warp {
+  0%, 100% { transform: skewX(0deg) scaleY(1); }
+  25%      { transform: skewX(0.5deg) scaleY(1.012); }
+  50%      { transform: skewX(-0.4deg) scaleY(0.99); }
+  75%      { transform: skewX(0.3deg) scaleY(1.008); }
+}
+
+@keyframes global-hue {
+  0%, 100% { filter: hue-rotate(-22deg) saturate(1.30); }
+  50%      { filter: hue-rotate(22deg) saturate(1.45); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.006); }
+}
+
+/* The whole interface slowly cycles hue and breathes. Applied to a wrapper
+   rather than <body> so the fixed background layers keep their own colours. */
+.melting .trip-stage {
+  animation: global-hue 9s ease-in-out infinite, breathe 5s ease-in-out infinite;
+}
+
+.melting .glass {
+  animation: melt-warp 7s ease-in-out infinite;
+}
+
+.melting .neon-frame::before {
+  animation-duration: 2.2s;
+  opacity: 1;
+}
+
+.melting .holo-text {
+  animation-duration: 2.4s;
+}
+
 /* Focus states must survive all of the above — keyboard users still need to
    see where they are. */
 :where(button, a, input, textarea, select, [tabindex]):focus-visible {
@@ -250,6 +328,7 @@ body {
 .calm .plasma-canvas,
 .calm .grain,
 .calm .blob-field,
+.calm .scanlines,
 .calm .trail-dot {
   display: none !important;
 }
@@ -287,7 +366,8 @@ body {
   }
   .plasma-canvas,
   .grain,
-  .blob-field {
+  .blob-field,
+  .scanlines {
     display: none;
   }
 }
