@@ -2,8 +2,9 @@
 
 A private, deliberately psychedelic tracker for the people you want to stay connected with at Berkeley. Every contact you save — who they are, where you met, what you talked about, how urgently you should follow up — belongs to your account alone. That privacy is not a promise made by the user interface: it is enforced by Postgres row-level security policies attached to the table itself, so even a request made directly against the public data endpoint with a valid token can only ever reach the rows its owner created. The app is a separate React single-page frontend and a separate Node.js/Express API, backed by Neon Postgres with Managed Better Auth, deployed as two independent Vercel projects.
 
-> **Live app:** `TODO — paste the Vercel URL here after deployment`
-> **API health check:** `TODO — https://<your-api>.vercel.app/health`
+> **Live app:** <https://berkeley-networking-tracker.vercel.app>
+> **API health check:** <https://berkeley-tracker-api.vercel.app/health>
+> **Repository:** <https://github.com/ebright09/berkeley-networking-tracker>
 
 ---
 
@@ -209,8 +210,8 @@ Finally, `revoke all on public.contacts from anonymous` means an unauthenticated
 **Prerequisites:** Node.js 20+, a Neon account.
 
 ```bash
-git clone https://github.com/<your-username>/networking-tracker.git
-cd networking-tracker
+git clone https://github.com/ebright09/berkeley-networking-tracker.git
+cd berkeley-networking-tracker
 npm install
 ```
 
@@ -340,8 +341,23 @@ Two Vercel projects from this one repository.
 ### Connect them
 
 1. Set the backend's `ALLOWED_ORIGINS` to the frontend's deployed domain and redeploy the backend.
-2. In the Neon console, add the frontend's deployed domain to **Auth → Trusted origins**.
+2. In the Neon console, add the frontend's deployed domain to **Auth → Trusted origins**. Neon
+   rejects auth requests from any other origin with `403 INVALID_ORIGIN`, so sign-in will fail
+   until this is done — it is the one step with no CLI equivalent.
 3. Open the live URL in a private window, create two accounts, and run the checklist below.
+
+### This project's deployment
+
+| | |
+|---|---|
+| Frontend | `berkeley-networking-tracker` → <https://berkeley-networking-tracker.vercel.app> |
+| Backend | `berkeley-tracker-api` → <https://berkeley-tracker-api.vercel.app> |
+| Database | Neon project `ep-winter-night-afbzbnnf`, branch `production` |
+
+Public (Config) variables on the frontend project: `VITE_NEON_AUTH_URL`, `VITE_NEON_DATA_API_URL`,
+`VITE_API_BASE_URL`. Server-only variables on the backend project: `NEON_AUTH_BASE_URL`,
+`NEON_AUTH_JWKS_URL`, `NEON_DATA_API_URL`, `ALLOWED_ORIGINS`. **`DATABASE_URL` is deliberately not
+set on either Vercel project** — the running application has no use for it.
 
 ---
 
@@ -385,18 +401,38 @@ Two Vercel projects from this one repository.
    Duration  717ms
 ```
 
+### Live security verification
+
+Beyond the unit tests, the following was run against the **real Neon project**. Every check
+below bypasses this project's own API and talks to the public Data API directly, because the
+claim being tested is that Postgres protects the rows — not that the server remembers to.
+
+| Check | Result |
+|---|---|
+| Anonymous read of `/contacts` | `400 — missing authentication credentials` |
+| Unauthenticated call to our API | `401 — You must be signed in to do that.` |
+| Tampered JWT signature | rejected, not `200` |
+| `user_id` stamped from `auth.user_id()` on insert | matches the token's `sub` |
+| A lists all contacts | B's row absent |
+| A requests B's row by exact id | `[]` |
+| A updates B's row | `[]`, and B's row verified unchanged |
+| A deletes B's row | `[]`, and B's row verified still present |
+| A reassigns their own row to B | ownership unchanged (`WITH CHECK` + trigger) |
+| Client supplies `user_id` on create | `400`, never forwarded to the database |
+| Empty / whitespace name | `400 — Name is required.` |
+| `priority: "urgent"` | `400 — Priority must be one of: high, medium, low.` |
+| Search containing `,` `(` `)` `"` | `200` — filter values are quoted, not injected |
+
 ### Definition-of-done checklist
 
-Run against the **deployed** app in a private window:
-
-- [ ] Live at a public URL
-- [ ] Sign up, sign in and sign out all work
-- [ ] Add, view, edit, delete, sort and filter contacts
-- [ ] Contacts survive a browser refresh
-- [ ] User A cannot see or change User B's contacts
-- [ ] An empty name and an invalid priority each fail with a clear message
-- [ ] `npm test` passes
-- [ ] No `DATABASE_URL` or other secret in the frontend bundle or Git history
+- [x] Live at a public URL
+- [x] Sign up, sign in and sign out all work
+- [x] Add, view, edit, delete, sort and filter contacts
+- [x] Contacts survive a browser refresh
+- [x] User A cannot see or change User B's contacts
+- [x] An empty name and an invalid priority each fail with a clear message
+- [x] `npm test` passes — 48 tests, plus 7 live RLS assertions via `npm run test:rls`
+- [x] No `DATABASE_URL` or other secret in the frontend bundle or Git history
 
 ---
 
