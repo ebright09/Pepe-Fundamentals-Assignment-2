@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { neon, isConfigured } from './neonClient.js';
+import { neon, isConfigured, authUrl } from './neonClient.js';
 
 /**
  * A thin wrapper over the Neon/Better Auth client.
@@ -36,27 +36,49 @@ export const signOut = async () => {
 };
 
 /**
- * The JWT to send to our API. Better Auth keeps an HTTP-only session cookie and
- * mints a short-lived JWT from it, so this is called before each request rather
- * than cached in application state.
+ * The JWT to send to our API.
+ *
+ * Better Auth keeps an HTTP-only session cookie and mints a short-lived JWT
+ * from it, so this is called before each request rather than cached.
+ *
+ * It fetches `<auth>/token` directly instead of going through the SDK. The
+ * client is a Proxy that turns any property access into a request, and neither
+ * `token()` nor `getToken()` produced a usable JWT here — `getToken()` resolves
+ * to `/get-token`, which does not exist and 404s on every call. A plain
+ * credentialed GET to `/token` is the request the endpoint actually answers,
+ * verified against the deployed auth service. The SDK accessors remain as
+ * fallbacks in case a future version changes this.
  */
+const readToken = (payload) =>
+  payload?.data?.token ?? payload?.token ?? payload?.access_token ?? null;
+
 export const getAccessToken = async () => {
+  if (authUrl) {
+    try {
+      const response = await fetch(`${authUrl.replace(/\/+$/, '')}/token`, {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      });
+      if (response.ok) {
+        const token = readToken(await response.json());
+        if (typeof token === 'string' && token.length > 0) return token;
+      }
+    } catch {
+      /* fall through to the SDK */
+    }
+  }
+
   const auth = neon?.auth;
   if (!auth) return null;
 
-  // Order matters. The Better Auth client is a Proxy that turns any property
-  // access into a call to the matching endpoint, so `getToken()` cheerfully
-  // requests `/get-token`, which does not exist — a guaranteed 404 on the hot
-  // path before the fallback succeeds. `token()` hits `/token`, which is the
-  // real endpoint, so try it first and keep the rest as genuine fallbacks.
   for (const accessor of ['token', 'getToken']) {
     if (typeof auth[accessor] === 'function') {
       try {
         const result = await auth[accessor]();
-        const token = result?.data?.token ?? result?.token ?? result?.access_token ?? result;
+        const token = readToken(result) ?? (typeof result === 'string' ? result : null);
         if (typeof token === 'string' && token.length > 0) return token;
       } catch {
-        /* fall through to the next accessor */
+        /* try the next accessor */
       }
     }
   }

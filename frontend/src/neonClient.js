@@ -14,7 +14,7 @@ import { BetterAuthReactAdapter } from '@neondatabase/neon-js/auth/react/adapter
  * API on the user's behalf.
  */
 
-const authUrl = import.meta.env.VITE_NEON_AUTH_URL;
+export const authUrl = import.meta.env.VITE_NEON_AUTH_URL;
 const dataApiUrl = import.meta.env.VITE_NEON_DATA_API_URL;
 
 export const isConfigured = Boolean(authUrl && dataApiUrl);
