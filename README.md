@@ -18,6 +18,7 @@ A private, deliberately psychedelic tracker for the people you want to stay conn
 - [Authentication and RLS ownership](#authentication-and-rls-ownership)
 - [Local setup](#local-setup)
 - [Environment variables](#environment-variables)
+- [Publishable versus secret keys](#publishable-versus-secret-keys)
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [Grading evidence](#grading-evidence)
@@ -27,39 +28,73 @@ A private, deliberately psychedelic tracker for the people you want to stay conn
 
 ## Screenshots
 
-All screenshots are captured from the running app by `npm run screenshots`
-([`scripts/screenshots.mjs`](scripts/screenshots.mjs)), so they cannot drift from what the app actually does.
+Every screenshot is captured from the **deployed** app by `npm run screenshots`
+([`scripts/screenshots.mjs`](scripts/screenshots.mjs)), so they cannot drift from what the app
+actually does. The create → refresh → edit → delete sequence below follows **one single contact**,
+named with a timestamp so you can confirm it is the same record at every step.
 
-**The contact list** — sortable table, priority badges, live plasma background, confetti still falling from the sign-in.
+### Sign in and sign out
 
-![Contact list](docs/screenshots/02-contacts.png)
+| | |
+|---|---|
+| **Sign in** — the gate. Nothing else renders until you are authenticated. | **Signed out** — back to the gate, contacts gone from the page. |
+| ![Sign in](docs/screenshots/01-sign-in.png) | ![Signed out](docs/screenshots/12-signed-out.png) |
+
+### Add, view, edit, delete — and it survives a refresh
+
+**1 · Add.** The new-contact dialog, filled in.
+
+![Add a contact](docs/screenshots/03-add-form.png)
+
+**2 · View.** `Refresh Proof 634814` is now in the list. (The name is timestamped at capture time, so
+re-running the script produces a different number — but it is the same name across all six images.)
+
+![Contact created](docs/screenshots/07-created.png)
+
+**3 · It survives a full page refresh.** Same contact, after `location.reload()` — it came back
+from Postgres, not from anything held in the browser.
+
+![After a full refresh](docs/screenshots/08-after-refresh.png)
+
+**4 · Edit.** The dialog opens pre-filled with the existing values.
+
+![Edit a contact](docs/screenshots/09-edit.png)
+
+**5 · Delete.** Confirmation first, naming the exact contact.
+
+![Delete confirmation](docs/screenshots/10-delete-confirm.png)
+
+**6 · Deleted.** Gone from the list; the count drops by one.
+
+![Contact deleted](docs/screenshots/11-deleted.png)
+
+### Invalid input fails safely
+
+A whitespace-only name is rejected **by the server** and the reason appears next to the field.
+
+![Validation error](docs/screenshots/04-invalid.png)
+
+### Two-account privacy
+
+User B signed in, seeing only their own contact. None of User A's rows appear anywhere.
+
+![Two-account privacy](docs/screenshots/05-two-accounts.png)
+
+### The rest
+
+| | |
+|---|---|
+| **The contact list** — sortable table, priority badges ![Contact list](docs/screenshots/02-contacts.png) | **Sort and filter** — by priority, executed in Postgres ![Sort and filter](docs/screenshots/06-sort-filter.png) |
 
 **Max trip / melt mode** — the intensity slider at 3. Kaleidoscope folding, rainbow scanlines,
 prism-split text, continuous fireworks behind the glass. The table is still perfectly legible and
 the priority colours still mean what they mean — that is the whole trick.
 
-![Max trip](docs/screenshots/10-max-trip.png)
-
-**Sign in** — the gate. Nothing else renders until you are authenticated.
-
-![Sign in](docs/screenshots/01-sign-in.png)
-
-**Invalid input fails safely** — a whitespace-only name is rejected and the reason appears next to the field.
-
-![Validation error](docs/screenshots/04-invalid.png)
-
-**Two-account privacy** — User B is signed in and sees only their own contact. None of User A's rows appear.
-
-![Two-account privacy](docs/screenshots/05-two-accounts.png)
-
-| | |
-|---|---|
-| **Add / edit dialog** ![Form](docs/screenshots/03-form.png) | **Sort and filter** ![Sort and filter](docs/screenshots/06-sort-filter.png) |
-| **After a full page refresh** — data came back from Postgres ![After refresh](docs/screenshots/07-after-refresh.png) | **Signed out** — back to the gate ![Signed out](docs/screenshots/08-signed-out.png) |
+![Max trip](docs/screenshots/14-max-trip.png)
 
 **Mobile (390px)** — the same data rendered as cards.
 
-<img src="docs/screenshots/09-mobile.png" alt="Mobile layout" width="320" />
+<img src="docs/screenshots/13-mobile.png" alt="Mobile layout" width="320" />
 
 ---
 
@@ -283,6 +318,26 @@ The full annotated list is in [`.env.example`](.env.example), committed with pla
 | `VITE_NEON_DATA_API_URL` | `NEXT_PUBLIC_NEON_DATA_API_URL` |
 | `VITE_API_BASE_URL` | — (the URL of this project's own Node API) |
 
+### Publishable versus secret keys
+
+The distinction the rubric asks about, concretely:
+
+| | Publishable | Secret |
+|---|---|---|
+| **Which values** | `VITE_NEON_AUTH_URL`, `VITE_NEON_DATA_API_URL`, `VITE_API_BASE_URL` | `DATABASE_URL`, `NEON_AUTH_COOKIE_SECRET` |
+| **Where they live** | Vercel *frontend* project, type **Config**; compiled into the JS bundle | Nowhere in this app. `DATABASE_URL` is used by hand for migrations only and is **not set on either Vercel project** |
+| **Who can read them** | Anyone who views source | Only me, locally |
+| **Why that is safe / necessary** | They are public HTTPS endpoints. Holding the URL grants nothing: every request needs a JWT Neon signed, and RLS filters every row that JWT can reach | A connection string bypasses RLS entirely — it *is* the database. Exposing it would make every policy in `db/schema.sql` irrelevant |
+
+Vercel actually enforces this distinction. Adding a `VITE_`-prefixed variable is refused unless you
+declare it `--type config` ("expose publicly") rather than `--type secret`, precisely because the
+prefix ships the value to the browser. All three public variables were added deliberately as
+Config; no secret-typed variable exists on the frontend project.
+
+Two further guarantees, both verified in [Live security verification](#live-security-verification):
+the built frontend bundle contains no connection string, and no credential appears anywhere in Git
+history.
+
 **Server-only** — never committed, never exposed to the browser:
 
 | Variable | Used by |
@@ -382,15 +437,18 @@ set on either Vercel project** — the running application has no use for it.
 
 ## Grading evidence
 
-| Requirement | Evidence |
+Each row of the assignment's Definition of Done, and where to find it.
+
+| Check | Evidence |
 |---|---|
-| Automated validation test passes | [Test output](#test-output) below · [`validation.test.js`](backend/tests/validation.test.js) |
-| Sign in and sign out | `docs/screenshots/01-sign-in.png`, `docs/screenshots/08-signed-out.png` |
-| Create, edit, delete, refresh | `docs/screenshots/02-contacts.png`, `03-form.png`, `07-after-refresh.png` |
-| Two-account privacy | `docs/screenshots/05-two-accounts.png` · [`rls.integration.test.js`](backend/tests/rls.integration.test.js) |
-| Invalid input fails safely | `docs/screenshots/04-invalid.png` |
-| Schema and RLS explanation | [Database schema](#database-schema) · [Authentication and RLS ownership](#authentication-and-rls-ownership) |
-| No committed secrets | [`.env.example`](.env.example) holds placeholders only; `.gitignore` excludes every real env file |
+| The app is **live** on a public URL | <https://berkeley-networking-tracker.vercel.app> — at the top of this README, with the API health check |
+| A user can **sign in and sign out** | [Sign in and sign out](#sign-in-and-sign-out) — `01-sign-in.png`, `12-signed-out.png` |
+| **Add, view, edit, delete** a contact and it **survives refresh** | [The six-step walkthrough](#add-view-edit-delete--and-it-survives-a-refresh) — `03-add-form` → `07-created` → `08-after-refresh` → `09-edit` → `10-delete-confirm` → `11-deleted`, all following the same contact |
+| User A **cannot see or change** User B's contacts | [Two-account privacy](#two-account-privacy) (`05-two-accounts.png`), the [live security verification](#live-security-verification) table, and [`rls.integration.test.js`](backend/tests/rls.integration.test.js) — 7 assertions against the real database |
+| One **invalid input fails safely** | [Invalid input fails safely](#invalid-input-fails-safely) — `04-invalid.png`, a whitespace-only name rejected by the server |
+| At least one **automated test passes** | [Test output](#test-output) — 48 passing · [`validation.test.js`](backend/tests/validation.test.js) |
+| Secret keys are in **server-only environment settings**, not frontend code | [Publishable versus secret keys](#publishable-versus-secret-keys) |
+| You can explain the **schema and RLS ownership rule** | [Database schema](#database-schema) · [Authentication and RLS ownership](#authentication-and-rls-ownership) |
 
 ### Test output
 
