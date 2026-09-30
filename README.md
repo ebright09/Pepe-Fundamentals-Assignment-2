@@ -4,7 +4,7 @@ A private, deliberately psychedelic tracker for the people you want to stay conn
 
 > **Live app:** <https://berkeley-networking-tracker.vercel.app>
 > **API health check:** <https://berkeley-tracker-api.vercel.app/health>
-> **Repository:** <https://github.com/ebright09/berkeley-networking-tracker>
+> **Repository:** <https://github.com/ebright09/Pepe-Fundamentals-Assignment-2>
 
 ---
 
@@ -229,8 +229,8 @@ Finally, `revoke all on public.contacts from anonymous` means an unauthenticated
 **Prerequisites:** Node.js 20+, a Neon account.
 
 ```bash
-git clone https://github.com/ebright09/berkeley-networking-tracker.git
-cd berkeley-networking-tracker
+git clone https://github.com/ebright09/Pepe-Fundamentals-Assignment-2.git
+cd Pepe-Fundamentals-Assignment-2
 npm install
 ```
 
