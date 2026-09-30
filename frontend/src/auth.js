@@ -44,7 +44,12 @@ export const getAccessToken = async () => {
   const auth = neon?.auth;
   if (!auth) return null;
 
-  for (const accessor of ['getToken', 'token']) {
+  // Order matters. The Better Auth client is a Proxy that turns any property
+  // access into a call to the matching endpoint, so `getToken()` cheerfully
+  // requests `/get-token`, which does not exist — a guaranteed 404 on the hot
+  // path before the fallback succeeds. `token()` hits `/token`, which is the
+  // real endpoint, so try it first and keep the rest as genuine fallbacks.
+  for (const accessor of ['token', 'getToken']) {
     if (typeof auth[accessor] === 'function') {
       try {
         const result = await auth[accessor]();
